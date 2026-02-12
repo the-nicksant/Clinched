@@ -1,36 +1,219 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OctoDraft - MMA Fantasy Platform
 
-## Getting Started
+Professional MMA Fantasy Engine with RPG-style mechanics, squad synergies, and strategic power-ups.
 
-First, run the development server:
+## 🏗️ Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+This project follows **Clean Architecture** principles with clear separation of concerns:
+
+```
+src/
+├── domain/          # 🟢 Pure business logic (NO external dependencies)
+├── application/     # 🔵 Use cases & orchestration
+├── infrastructure/  # 🟡 External services (Convex, Scrapers, Auth)
+└── presentation/    # 🟣 React components & UI
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Layer Rules
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Domain**: Pure TypeScript, all business rules and scoring logic
+- **Application**: Orchestrates domain + infrastructure via use cases
+- **Infrastructure**: Implements domain interfaces (repositories, APIs)
+- **Presentation**: React components that consume DTOs from application layer
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+📖 See [Clean Architecture Plan](./docs/CLEAN_ARCHITECTURE_PLAN.md) for detailed documentation.
 
-## Learn More
+## 🚀 Quick Start
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Node.js 18+ and npm
+- [Convex account](https://convex.dev)
+- [Clerk account](https://clerk.com)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Installation
 
-## Deploy on Vercel
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Set up Convex**
+   ```bash
+   npx convex dev
+   ```
+   This will:
+   - Create a new Convex project (or select existing)
+   - Generate `.env.local` with Convex credentials
+   - Start the Convex dev server
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Set up Clerk**
+   - Go to [clerk.com](https://clerk.com) and create an application
+   - Copy your publishable and secret keys
+   - Add to `.env.local`:
+     ```
+     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+     CLERK_SECRET_KEY=sk_test_...
+     ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open [http://localhost:3000](http://localhost:3000)**
+
+## 🧪 Testing (TDD)
+
+We use **Vitest** for unit testing with a TDD approach.
+
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Test Structure
+
+```
+tests/
+├── domain/services/     # Business logic tests (ScoringEngine, etc.)
+├── application/         # Use case tests
+└── infrastructure/      # Repository tests
+```
+
+## 📁 Project Structure
+
+```
+fight-deck/
+├── src/
+│   ├── domain/                    # Business logic
+│   │   ├── entities/              # Domain models
+│   │   ├── value-objects/         # Immutable values
+│   │   ├── services/              # Business services
+│   │   ├── repositories/          # Repository interfaces
+│   │   └── errors/                # Domain errors
+│   │
+│   ├── application/               # Use cases
+│   │   ├── use-cases/             # Application workflows
+│   │   ├── dto/                   # Data transfer objects
+│   │   └── mappers/               # Domain ↔ DTO
+│   │
+│   ├── infrastructure/            # External integrations
+│   │   ├── convex/                # Convex repositories
+│   │   ├── scrapers/              # Web scrapers
+│   │   └── auth/                  # Clerk auth
+│   │
+│   ├── presentation/              # UI layer
+│   │   ├── components/            # React components
+│   │   ├── hooks/                 # Custom hooks
+│   │   └── pages/                 # Page components
+│   │
+│   └── shared/                    # Shared utilities
+│       ├── types/
+│       ├── utils/
+│       └── constants/
+│
+├── convex/                        # Convex backend
+│   ├── schema.ts                  # Database schema
+│   ├── functions/                 # Queries & mutations
+│   ├── crons/                     # Scheduled jobs
+│   └── webhooks/                  # External webhooks
+│
+├── tests/                         # Test files
+└── docs/                          # Documentation
+```
+
+## 📚 Documentation
+
+- [Project Specifications](./docs/SPECS.md) - Game rules and mechanics
+- [Scoring Rules](./docs/SCORING_RULES.md) - Complete scoring engine documentation
+- [Implementation Plan](./docs/IMPLEMENTATION_PLAN.md) - Tech stack and features
+- [Clean Architecture Plan](./docs/CLEAN_ARCHITECTURE_PLAN.md) - Architecture details
+- [MVP Checklist](./docs/MVP_IMPLEMENTATION_CHECKLIST.md) - Step-by-step implementation guide
+
+## 🎯 Core Features (MVP)
+
+- ✅ User authentication (Clerk with social logins)
+- ✅ Event discovery (upcoming UFC events)
+- ✅ Roster building (6 fighters, $10k cap, 1 captain)
+- ✅ Fighter classes + synergies (Striker, Grappler, All-Rounder, Veteran)
+- ✅ Power-up cards (Hype Train, Resilience, Blitz, Red Mist)
+- ✅ Complete scoring engine
+- ✅ Global leaderboard per event
+- ✅ User XP tracking
+- ✅ Web scraping for UFC data (Sherdog/Tapology)
+
+## 🔧 Available Scripts
+
+```bash
+npm run dev           # Start Next.js dev server
+npm run build         # Build for production
+npm run start         # Start production server
+npm run lint          # Run ESLint
+npm test              # Run Vitest tests
+npm run test:ui       # Run tests with UI
+npm run test:coverage # Run tests with coverage
+npm run convex:dev    # Start Convex dev server (separate terminal)
+```
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), React 19, TypeScript
+- **Backend**: Convex (real-time database + backend functions)
+- **Auth**: Clerk (social logins + user management)
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Testing**: Vitest, Testing Library
+- **Validation**: Zod
+- **Web Scraping**: Puppeteer / Cheerio
+
+## 🌐 Environment Variables
+
+Copy `.env.local.example` to `.env.local` and fill in your credentials:
+
+```bash
+cp .env.local.example .env.local
+```
+
+## 🤝 Contributing
+
+This project follows TDD (Test-Driven Development):
+
+1. Write a failing test first
+2. Implement the minimum code to pass the test
+3. Refactor while keeping tests green
+
+## 📝 License
+
+Private project - All rights reserved
+
+## 🎮 Game Overview
+
+OctoDraft is a gamified MMA Fantasy platform where users:
+1. Build a roster of 6 fighters for each UFC event
+2. Designate a captain (1.5x multiplier)
+3. Apply power-up cards for strategic advantages
+4. Compete on global leaderboards
+5. Earn XP and level up their profile
+
+### Scoring System
+
+Points are awarded based on:
+- **Victory** (100 pts) + **Method multiplier** (KO=2.0x, Sub=1.8x, Decision=1.2x)
+- **Volume** (Knockdowns, Takedowns, Strikes)
+- **Round bonuses** (R1=+100, R2=+60, R3=+30)
+- **UFC bonuses** (FOTN/POTN = +100)
+- **Synergies** (3+ same class = +15% bonus)
+- **Captain** (1.5x multiplier)
+- **Power-ups** (various effects)
+
+See [Scoring Rules](./docs/SCORING_RULES.md) for complete details.
+
+---
+
+Built with ❤️ for MMA fans
