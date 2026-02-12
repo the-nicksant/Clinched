@@ -1,4 +1,4 @@
-# OctoDraft: Clean Architecture Implementation Plan
+# Clinched: Clean Architecture Implementation Plan
 
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)

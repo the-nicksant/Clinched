@@ -1,7 +1,7 @@
-# OctoDraft: Professional MMA Fantasy Engine
+# Clinched: Professional MMA Fantasy Engine
 
 ## 1. Project Overview
-**OctoDraft** is a gamified MMA Fantasy platform designed to transform passive UFC viewership into a strategic management experience. Unlike standard "pick'em" apps, OctoDraft introduces RPG mechanics, squad synergies, and strategic power-ups, requiring users to act as "Managers" rather than just bettors.
+**Clinched** is a gamified MMA Fantasy platform designed to transform passive UFC viewership into a strategic management experience. Unlike standard "pick'em" apps, Clinched introduces RPG mechanics, squad synergies, and strategic power-ups, requiring users to act as "Managers" rather than just bettors.
 
 ## 2. Core Business Logic
 The game operates on a per-event basis (UFC Cards). Users must build the most efficient lineup within constraints to climb the global leaderboard.

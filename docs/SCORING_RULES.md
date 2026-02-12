@@ -1,4 +1,4 @@
-# OctoDraft: Scoring Engine & Game Rules
+# Clinched: Scoring Engine & Game Rules
 
 ## Table of Contents
 1. [Game Rules](#game-rules)

@@ -1,4 +1,4 @@
-# OctoDraft MVP: Implementation Plan
+# Clinched MVP: Implementation Plan
 
 ## 1. Technology Stack
 
@@ -291,7 +291,7 @@ export const scrapeEventResults = internalMutation({
 ## 4. Feature Modules & Components
 
 ### 4.1. Authentication Flow
-1. User visits OctoDraft
+1. User visits Clinched
 2. Clerk handles sign-in (Google, Discord, Email)
 3. Webhook triggers Convex mutation to create/update user record
 4. User profile displays username, level, total XP

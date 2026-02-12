@@ -1,4 +1,4 @@
-# OctoDraft MVP: Implementation Checklist
+# Clinched MVP: Implementation Checklist
 
 This is a practical, step-by-step checklist for building the MVP following clean architecture principles.
 
@@ -83,7 +83,7 @@ This is a practical, step-by-step checklist for building the MVP following clean
   - [ ] Skeleton (loading states)
 - [ ] Create basic app layout (`app/layout.tsx`)
 - [ ] Create navigation header component
-- [ ] Set up Tailwind config with custom colors for OctoDraft theme
+- [ ] Set up Tailwind config with custom colors for Clinched theme
 
 ---
 
@@ -853,4 +853,4 @@ This is a practical, step-by-step checklist for building the MVP following clean
 
 ---
 
-This checklist provides a clear, actionable roadmap for building OctoDraft MVP following clean architecture principles.
+This checklist provides a clear, actionable roadmap for building Clinched MVP following clean architecture principles.

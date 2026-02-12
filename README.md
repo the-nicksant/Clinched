@@ -1,4 +1,4 @@
-# OctoDraft - MMA Fantasy Platform
+# Clinched - MMA Fantasy Platform
 
 Professional MMA Fantasy Engine with RPG-style mechanics, squad synergies, and strategic power-ups.
 
@@ -194,7 +194,7 @@ Private project - All rights reserved
 
 ## 🎮 Game Overview
 
-OctoDraft is a gamified MMA Fantasy platform where users:
+Clinched is a gamified MMA Fantasy platform where users:
 1. Build a roster of 6 fighters for each UFC event
 2. Designate a captain (1.5x multiplier)
 3. Apply power-up cards for strategic advantages
