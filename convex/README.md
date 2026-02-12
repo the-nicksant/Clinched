@@ -1,45 +1,90 @@
-# Convex Setup Instructions
+# Welcome to your Convex functions directory!
 
-## Initial Setup
+Write your Convex functions here.
+See https://docs.convex.dev/functions for more.
 
-1. **Sign up for Convex**: Go to [convex.dev](https://convex.dev) and create an account
+A query function that takes two arguments looks like:
 
-2. **Initialize Convex project**:
-   ```bash
-   npx convex dev
-   ```
-   This will:
-   - Create a new Convex project
-   - Generate `.env.local` with `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL`
-   - Start the Convex dev server
+```ts
+// convex/myFunctions.ts
+import { query } from "./_generated/server";
+import { v } from "convex/values";
 
-3. **The schema is already defined** in `convex/schema.ts`
+export const myQueryFunction = query({
+  // Validators for arguments.
+  args: {
+    first: v.number(),
+    second: v.string(),
+  },
 
-## Running Convex
+  // Function implementation.
+  handler: async (ctx, args) => {
+    // Read the database as many times as you need here.
+    // See https://docs.convex.dev/database/reading-data.
+    const documents = await ctx.db.query("tablename").collect();
 
-- **Development**: `npx convex dev` (runs alongside Next.js)
-- **Deploy to production**: `npx convex deploy`
+    // Arguments passed from the client are properties of the args object.
+    console.log(args.first, args.second);
 
-## Project Structure
-
-```
-convex/
-├── schema.ts           # Database schema (already configured)
-├── functions/          # Queries and mutations
-│   ├── fighters.ts
-│   ├── events.ts
-│   ├── rosters.ts
-│   ├── scoring.ts
-│   └── users.ts
-├── crons/             # Scheduled functions
-│   └── scrapeEvents.ts
-└── webhooks/          # External webhooks (Clerk)
-    └── clerk.ts
+    // Write arbitrary JavaScript here: filter, aggregate, build derived data,
+    // remove non-public properties, or create new objects.
+    return documents;
+  },
+});
 ```
 
-## Next Steps
+Using this query function in a React component looks like:
 
-After running `npx convex dev`, you can:
-1. View your dashboard at the provided URL
-2. Add Convex functions in `convex/functions/`
-3. Import and use them in your Next.js app
+```ts
+const data = useQuery(api.myFunctions.myQueryFunction, {
+  first: 10,
+  second: "hello",
+});
+```
+
+A mutation function looks like:
+
+```ts
+// convex/myFunctions.ts
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const myMutationFunction = mutation({
+  // Validators for arguments.
+  args: {
+    first: v.string(),
+    second: v.string(),
+  },
+
+  // Function implementation.
+  handler: async (ctx, args) => {
+    // Insert or modify documents in the database here.
+    // Mutations can also read from the database like queries.
+    // See https://docs.convex.dev/database/writing-data.
+    const message = { body: args.first, author: args.second };
+    const id = await ctx.db.insert("messages", message);
+
+    // Optionally, return a value from your mutation.
+    return await ctx.db.get("messages", id);
+  },
+});
+```
+
+Using this mutation function in a React component looks like:
+
+```ts
+const mutation = useMutation(api.myFunctions.myMutationFunction);
+function handleButtonPress() {
+  // fire and forget, the most common way to use mutations
+  mutation({ first: "Hello!", second: "me" });
+  // OR
+  // use the result once the mutation has completed
+  mutation({ first: "Hello!", second: "me" }).then((result) =>
+    console.log(result),
+  );
+}
+```
+
+Use the Convex CLI to push your functions to a deployment. See everything
+the Convex CLI can do by running `npx convex -h` in your project root
+directory. To learn more, launch the docs with `npx convex docs`.
