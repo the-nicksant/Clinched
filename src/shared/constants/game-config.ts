@@ -66,3 +66,14 @@ export const SYNERGY_CONFIG = {
   /** Veteran age threshold */
   VETERAN_AGE: 35,
 } as const;
+
+/**
+ * Unified game configuration
+ * Aggregates all config for easy access
+ */
+export const GAME_CONFIG = {
+  SALARY_CAP: ROSTER_CONFIG.SALARY_CAP,
+  MAX_FIGHTERS: ROSTER_CONFIG.MAX_FIGHTERS,
+  MAX_POWER_UPS: ROSTER_CONFIG.MAX_POWER_UPS,
+  REQUIRED_CAPTAINS: ROSTER_CONFIG.REQUIRED_CAPTAINS,
+} as const;

@@ -34,6 +34,25 @@ export default defineSchema({
     isActive: v.boolean(),
   }).index("by_name", ["name"]),
 
+  powerUpCards: defineTable({
+    name: v.string(),
+    description: v.string(),
+    effectType: v.union(
+      v.literal("multiplier_win_loss"),
+      v.literal("loss_to_win_with_bonus"),
+      v.literal("multiplier_round_finish"),
+      v.literal("flat_bonus_per_ufc_bonus")
+    ),
+    effectConfig: v.any(), // Flexible object to support different effect configs
+    isActive: v.boolean(),
+    cost: v.optional(v.number()),
+    imageUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_isActive", ["isActive"])
+    .index("by_name", ["name"]),
+
   events: defineTable({
     name: v.string(),
     eventDate: v.number(),
@@ -132,12 +151,7 @@ export default defineSchema({
     totalSalary: v.number(),
     powerUps: v.array(
       v.object({
-        type: v.union(
-          v.literal("Hype Train"),
-          v.literal("Resilience"),
-          v.literal("Blitz"),
-          v.literal("Red Mist")
-        ),
+        powerUpCardId: v.id("powerUpCards"), // Now references powerUpCards table
         appliedToFighterId: v.id("fighters"),
       })
     ),

@@ -1,18 +1,25 @@
 /**
- * Power-Up Applicator
+ * Power-Up Applicator (Refactored)
  *
- * Applies power-up effects to fighter scores.
+ * Applies power-up effects to fighter scores using data-driven PowerUpCard entities.
+ * Effect logic is determined by the card's effectType, making it easy to add
+ * new cards without modifying this class.
  *
- * Power-Up Types:
- * - Hype Train: 2× win / -2× loss (multiplier on final score)
- * - Resilience: Loss + FOTN → treat as Unanimous Decision win
- * - Blitz: 3× if R1 finish (multiplier on final score)
- * - Red Mist: +50 per UFC bonus (flat bonus on final score)
+ * Power-Up Effect Types:
+ * - multiplier_win_loss: Different multipliers for win vs loss (e.g., Hype Train)
+ * - loss_to_win_with_bonus: Convert loss to win if has bonus (e.g., Resilience)
+ * - multiplier_round_finish: Multiplier if finished in target round (e.g., Blitz)
+ * - flat_bonus_per_ufc_bonus: Flat points per UFC bonus (e.g., Red Mist)
  */
 
-import { Roster, getPowerUpForFighter } from "@/domain/entities/Roster";
+import { PowerUpCard } from "@/domain/entities/PowerUpCard";
 import { Fight, didFighterWin, receivedPerformanceBonus } from "@/domain/entities/Fight";
-import { POWER_UP_EFFECTS } from "@/shared/constants/scoring-constants";
+import {
+  isMultiplierWinLossConfig,
+  isLossToWinWithBonusConfig,
+  isMultiplierRoundFinishConfig,
+  isFlatBonusPerUFCBonusConfig,
+} from "@/domain/value-objects/PowerUpEffectType";
 
 export interface PowerUpResult {
   multiplier: number;
@@ -21,16 +28,15 @@ export interface PowerUpResult {
 
 export class PowerUpApplicator {
   /**
-   * Check if Resilience power-up should convert a loss to a win
-   * Resilience activates when: fighter lost + has FOTN bonus
+   * Check if a loss-to-win power-up should activate
+   * (e.g., Resilience: loss + FOTN → treat as win)
    */
-  shouldResilienceActivate(
-    roster: Roster,
+  shouldLossToWinActivate(
+    card: PowerUpCard | null,
     fight: Fight,
     fighterId: string
   ): boolean {
-    const powerUp = getPowerUpForFighter(roster, fighterId);
-    if (!powerUp || powerUp.type !== "Resilience") {
+    if (!card || card.effectType !== "loss_to_win_with_bonus") {
       return false;
     }
 
@@ -39,12 +45,41 @@ export class PowerUpApplicator {
       return false;
     }
 
-    // Must have FOTN
-    if (!fight.bonuses.fightOfTheNight) {
+    // Check required bonus
+    if (!isLossToWinWithBonusConfig(card.effectConfig)) {
       return false;
     }
 
-    return true;
+    const { requiredBonus } = card.effectConfig;
+
+    switch (requiredBonus) {
+      case "FOTN":
+        return fight.bonuses.fightOfTheNight;
+      case "POTN":
+        return receivedPerformanceBonus(fight, fighterId);
+      case "ANY":
+        return (
+          fight.bonuses.fightOfTheNight ||
+          receivedPerformanceBonus(fight, fighterId)
+        );
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Get the method multiplier to use when loss-to-win is active
+   */
+  getLossToWinMethodMultiplier(card: PowerUpCard): number {
+    if (card.effectType !== "loss_to_win_with_bonus") {
+      return 1.0;
+    }
+
+    if (!isLossToWinWithBonusConfig(card.effectConfig)) {
+      return 1.0;
+    }
+
+    return card.effectConfig.treatAsMethodMultiplier;
   }
 
   /**
@@ -52,37 +87,35 @@ export class PowerUpApplicator {
    * This is called AFTER synergy and captain multipliers
    */
   applyPowerUp(
-    roster: Roster,
+    card: PowerUpCard | null,
     fight: Fight,
     fighterId: string,
     currentScore: number
   ): PowerUpResult {
-    const powerUp = getPowerUpForFighter(roster, fighterId);
-
-    if (!powerUp) {
+    if (!card) {
       return {
         multiplier: 1.0,
         flatBonus: 0,
       };
     }
 
-    switch (powerUp.type) {
-      case "Hype Train":
-        return this.applyHypeTrain(fight, fighterId, currentScore);
+    switch (card.effectType) {
+      case "multiplier_win_loss":
+        return this.applyMultiplierWinLoss(card, fight, fighterId);
 
-      case "Resilience":
-        // Resilience is handled early in calculation (modifies victory points)
+      case "loss_to_win_with_bonus":
+        // This is handled early in calculation (modifies victory points)
         // No additional effect here
         return {
           multiplier: 1.0,
           flatBonus: 0,
         };
 
-      case "Blitz":
-        return this.applyBlitz(fight, fighterId);
+      case "multiplier_round_finish":
+        return this.applyMultiplierRoundFinish(card, fight, fighterId);
 
-      case "Red Mist":
-        return this.applyRedMist(fight, fighterId);
+      case "flat_bonus_per_ufc_bonus":
+        return this.applyFlatBonusPerUFCBonus(card, fight, fighterId);
 
       default:
         return {
@@ -93,54 +126,78 @@ export class PowerUpApplicator {
   }
 
   /**
-   * Hype Train: 2× on win, -2× on loss
+   * Apply multiplier_win_loss effect
+   * Example: Hype Train (2× win, -2× loss)
    */
-  private applyHypeTrain(
+  private applyMultiplierWinLoss(
+    card: PowerUpCard,
     fight: Fight,
-    fighterId: string,
-    currentScore: number
+    fighterId: string
   ): PowerUpResult {
-    const won = didFighterWin(fight, fighterId);
-
-    if (won) {
-      return {
-        multiplier: POWER_UP_EFFECTS.HYPE_TRAIN.WIN_MULTIPLIER,
-        flatBonus: 0,
-      };
-    } else {
-      // Loss: -2× multiplier (negative)
-      return {
-        multiplier: POWER_UP_EFFECTS.HYPE_TRAIN.LOSS_MULTIPLIER,
-        flatBonus: 0,
-      };
+    if (!isMultiplierWinLossConfig(card.effectConfig)) {
+      return { multiplier: 1.0, flatBonus: 0 };
     }
-  }
 
-  /**
-   * Blitz: 3× if finished in Round 1
-   */
-  private applyBlitz(fight: Fight, fighterId: string): PowerUpResult {
     const won = didFighterWin(fight, fighterId);
-    const isRound1 = fight.round === 1;
-    const isFinish = fight.method !== "Decision" && fight.method !== "Draw";
-
-    if (won && isRound1 && isFinish) {
-      return {
-        multiplier: POWER_UP_EFFECTS.BLITZ.ROUND_1_MULTIPLIER,
-        flatBonus: 0,
-      };
-    }
+    const { winMultiplier, lossMultiplier } = card.effectConfig;
 
     return {
-      multiplier: 1.0,
+      multiplier: won ? winMultiplier : lossMultiplier,
       flatBonus: 0,
     };
   }
 
   /**
-   * Red Mist: +50 per UFC bonus (POTN or FOTN)
+   * Apply multiplier_round_finish effect
+   * Example: Blitz (3× if R1 finish)
    */
-  private applyRedMist(fight: Fight, fighterId: string): PowerUpResult {
+  private applyMultiplierRoundFinish(
+    card: PowerUpCard,
+    fight: Fight,
+    fighterId: string
+  ): PowerUpResult {
+    if (!isMultiplierRoundFinishConfig(card.effectConfig)) {
+      return { multiplier: 1.0, flatBonus: 0 };
+    }
+
+    const { targetRound, multiplier, mustBeFinish } = card.effectConfig;
+    const won = didFighterWin(fight, fighterId);
+    const isTargetRound = fight.round === targetRound;
+    const isFinish = fight.method !== "Decision" && fight.method !== "Draw";
+
+    // Check all conditions
+    if (!won) {
+      return { multiplier: 1.0, flatBonus: 0 };
+    }
+
+    if (!isTargetRound) {
+      return { multiplier: 1.0, flatBonus: 0 };
+    }
+
+    if (mustBeFinish && !isFinish) {
+      return { multiplier: 1.0, flatBonus: 0 };
+    }
+
+    return {
+      multiplier,
+      flatBonus: 0,
+    };
+  }
+
+  /**
+   * Apply flat_bonus_per_ufc_bonus effect
+   * Example: Red Mist (+50 per UFC bonus)
+   */
+  private applyFlatBonusPerUFCBonus(
+    card: PowerUpCard,
+    fight: Fight,
+    fighterId: string
+  ): PowerUpResult {
+    if (!isFlatBonusPerUFCBonusConfig(card.effectConfig)) {
+      return { multiplier: 1.0, flatBonus: 0 };
+    }
+
+    const { bonusPerUFCBonus } = card.effectConfig;
     let bonusCount = 0;
 
     // Count POTN
@@ -153,11 +210,9 @@ export class PowerUpApplicator {
       bonusCount++;
     }
 
-    const flatBonus = bonusCount * POWER_UP_EFFECTS.RED_MIST.BONUS_PER_UFC_BONUS;
-
     return {
       multiplier: 1.0,
-      flatBonus,
+      flatBonus: bonusCount * bonusPerUFCBonus,
     };
   }
 }

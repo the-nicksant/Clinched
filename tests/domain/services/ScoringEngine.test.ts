@@ -15,10 +15,63 @@ import { Fighter, createFighter } from "@/domain/entities/Fighter";
 import { Fight } from "@/domain/entities/Fight";
 import { Roster, createRoster } from "@/domain/entities/Roster";
 import { FightStats } from "@/domain/value-objects/FightStats";
+import { PowerUpCard, createPowerUpCard } from "@/domain/entities/PowerUpCard";
+import { PowerUp } from "@/domain/value-objects/PowerUpType";
 
 // ============================================================================
 // TEST HELPERS
 // ============================================================================
+
+/**
+ * Default PowerUpCard objects for testing
+ * These match the cards seeded in the database
+ */
+const DEFAULT_POWER_UP_CARDS: Record<string, PowerUpCard> = {
+  "hype-train-1": createPowerUpCard({
+    id: "hype-train-1",
+    name: "Hype Train",
+    description: "2× multiplier on wins, -2× on losses",
+    effectType: "multiplier_win_loss",
+    effectConfig: {
+      winMultiplier: 2.0,
+      lossMultiplier: -2.0,
+    },
+    isActive: true,
+  }),
+  "resilience-1": createPowerUpCard({
+    id: "resilience-1",
+    name: "Resilience",
+    description: "Convert loss to win if you have Fight of the Night",
+    effectType: "loss_to_win_with_bonus",
+    effectConfig: {
+      requiredBonus: "FOTN",
+      treatAsMethodMultiplier: 1.2, // Unanimous decision equivalent
+    },
+    isActive: true,
+  }),
+  "blitz-1": createPowerUpCard({
+    id: "blitz-1",
+    name: "Blitz",
+    description: "3× multiplier if finished in Round 1",
+    effectType: "multiplier_round_finish",
+    effectConfig: {
+      targetRound: 1,
+      multiplier: 3.0,
+      mustBeFinish: true,
+    },
+    isActive: true,
+  }),
+  "red-mist-1": createPowerUpCard({
+    id: "red-mist-1",
+    name: "Red Mist",
+    description: "+50 points per UFC bonus received",
+    effectType: "flat_bonus_per_ufc_bonus",
+    effectConfig: {
+      bonusPerUFCBonus: 50,
+    },
+    isActive: true,
+  }),
+};
 
 /**
  * Create a test fighter with sensible defaults
@@ -42,6 +95,8 @@ function createTestFight(
 ): Fight {
   return {
     id: overrides.id || "fight-1",
+    fighter1Id: overrides.fighter1Id || "f1",
+    fighter2Id: overrides.fighter2Id || "f2",
     winnerId: overrides.winnerId,
     method: overrides.method || "KO/TKO",
     decisionType: overrides.decisionType,
@@ -71,16 +126,32 @@ function createEmptyStats(): FightStats {
  * Create a test roster with sensible defaults
  * NOTE: By default, captainId is set to "default-captain" (not in roster)
  * to avoid applying captain multiplier in non-captain tests
+ *
+ * This helper automatically resolves PowerUpCard references from powerUps
  */
 function createTestRoster(
   overrides: Partial<Roster> & { fighters: Fighter[] }
 ): Roster {
-  return createRoster({
+  const roster = createRoster({
     id: overrides.id || "roster-1",
     fighters: overrides.fighters,
     captainId: overrides.captainId || "default-captain",
     powerUps: overrides.powerUps || [],
   });
+
+  // Automatically resolve PowerUpCards from the default cards
+  if (roster.powerUps.length > 0) {
+    const powerUpCards = new Map<string, PowerUpCard>();
+    for (const powerUp of roster.powerUps) {
+      const card = DEFAULT_POWER_UP_CARDS[powerUp.powerUpCardId];
+      if (card) {
+        powerUpCards.set(powerUp.powerUpCardId, card);
+      }
+    }
+    roster.powerUpCards = powerUpCards;
+  }
+
+  return roster;
 }
 
 // ============================================================================
@@ -1279,6 +1350,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "hype-train-1",
               type: "Hype Train",
               appliedToFighterId: "f1",
             },
@@ -1319,6 +1391,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "hype-train-1",
               type: "Hype Train",
               appliedToFighterId: "f1",
             },
@@ -1366,6 +1439,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "resilience-1",
               type: "Resilience",
               appliedToFighterId: "f1",
             },
@@ -1417,6 +1491,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "resilience-1",
               type: "Resilience",
               appliedToFighterId: "f1",
             },
@@ -1463,6 +1538,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "resilience-1",
               type: "Resilience",
               appliedToFighterId: "f1",
             },
@@ -1511,6 +1587,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "blitz-1",
               type: "Blitz",
               appliedToFighterId: "f1",
             },
@@ -1550,6 +1627,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "blitz-1",
               type: "Blitz",
               appliedToFighterId: "f1",
             },
@@ -1589,6 +1667,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "blitz-1",
               type: "Blitz",
               appliedToFighterId: "f1",
             },
@@ -1629,6 +1708,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "red-mist-1",
               type: "Red Mist",
               appliedToFighterId: "f1",
             },
@@ -1675,6 +1755,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "red-mist-1",
               type: "Red Mist",
               appliedToFighterId: "f1",
             },
@@ -1721,6 +1802,7 @@ describe("ScoringEngine", () => {
           fighters: [fighter],
           powerUps: [
             {
+              powerUpCardId: "red-mist-1",
               type: "Red Mist",
               appliedToFighterId: "f1",
             },
@@ -1775,6 +1857,7 @@ describe("ScoringEngine", () => {
           captainId: "captain1",
           powerUps: [
             {
+              powerUpCardId: "blitz-1",
               type: "Blitz",
               appliedToFighterId: "captain1",
             },

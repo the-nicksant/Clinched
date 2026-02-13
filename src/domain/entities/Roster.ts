@@ -10,10 +10,17 @@
 
 import { Fighter } from "@/domain/entities/Fighter";
 import { PowerUp } from "@/domain/value-objects/PowerUpType";
+import { PowerUpCard } from "@/domain/entities/PowerUpCard";
 
 export interface Roster {
   /** Unique identifier */
   id: string;
+
+  /** User who created this roster */
+  userId: string;
+
+  /** Event this roster is for */
+  eventId: string;
 
   /** Array of fighters in the roster (exactly 6 for a valid roster) */
   fighters: Fighter[];
@@ -23,6 +30,12 @@ export interface Roster {
 
   /** Power-ups applied to fighters (max 2) */
   powerUps: PowerUp[];
+
+  /**
+   * Resolved PowerUpCard entities (optional, loaded from database)
+   * Maps powerUpCardId to the full PowerUpCard for scoring calculations
+   */
+  powerUpCards?: Map<string, PowerUpCard>;
 }
 
 /**
@@ -47,6 +60,27 @@ export function getPowerUpForFighter(
   fighterId: string
 ): PowerUp | undefined {
   return roster.powerUps.find((pu) => pu.appliedToFighterId === fighterId);
+}
+
+/**
+ * Helper function to get the PowerUpCard for a specific fighter
+ * Returns null if no power-up is applied or card is not loaded
+ */
+export function getPowerUpCardForFighter(
+  roster: Roster,
+  fighterId: string
+): PowerUpCard | null {
+  const powerUp = getPowerUpForFighter(roster, fighterId);
+  if (!powerUp) {
+    return null;
+  }
+
+  // Look up the card from the resolved cards map
+  if (roster.powerUpCards) {
+    return roster.powerUpCards.get(powerUp.powerUpCardId) || null;
+  }
+
+  return null;
 }
 
 /**
@@ -79,12 +113,16 @@ export function countFightersByClass(
  */
 export function createRoster(params: {
   id: string;
+  userId?: string;
+  eventId?: string;
   fighters: Fighter[];
   captainId: string;
   powerUps?: PowerUp[];
 }): Roster {
   return {
     id: params.id,
+    userId: params.userId || "default-user",
+    eventId: params.eventId || "default-event",
     fighters: params.fighters,
     captainId: params.captainId,
     powerUps: params.powerUps || [],

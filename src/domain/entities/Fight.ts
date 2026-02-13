@@ -15,6 +15,12 @@ export interface Fight {
   /** Unique identifier */
   id: string;
 
+  /** First fighter ID */
+  fighter1Id: string;
+
+  /** Second fighter ID */
+  fighter2Id: string;
+
   /** Winner's fighter ID (null if draw or no contest) */
   winnerId: string | null;
 

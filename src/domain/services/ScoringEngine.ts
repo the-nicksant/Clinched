@@ -18,7 +18,8 @@
 
 import { Fighter } from "@/domain/entities/Fighter";
 import { Fight, didFighterWin, getStatsForFighter, getPenaltiesForFighter } from "@/domain/entities/Fight";
-import { Roster, isCaptain } from "@/domain/entities/Roster";
+import { Roster, isCaptain, getPowerUpCardForFighter } from "@/domain/entities/Roster";
+import { PowerUpCard } from "@/domain/entities/PowerUpCard";
 import { Score } from "@/domain/value-objects/Score";
 import {
   VICTORY_POINTS,
@@ -27,7 +28,6 @@ import {
   VOLUME_POINTS,
   CAPTAIN_MULTIPLIER,
   UFC_BONUSES,
-  POWER_UP_EFFECTS,
   PENALTIES,
 } from "@/shared/constants/scoring-constants";
 import { SynergyCalculator } from "@/domain/services/SynergyCalculator";
@@ -52,9 +52,12 @@ export class ScoringEngine {
     fight: Fight,
     roster: Roster
   ): Score {
-    // Step 0: Check if Resilience power-up should activate (loss + FOTN → treat as win)
-    const resilienceActive = this.powerUpApplicator.shouldResilienceActivate(
-      roster,
+    // Get the PowerUpCard for this fighter (may be null)
+    const powerUpCard = getPowerUpCardForFighter(roster, fighter.id);
+
+    // Step 0: Check if loss-to-win power-up should activate (e.g., Resilience: loss + FOTN → treat as win)
+    const lossToWinActive = this.powerUpApplicator.shouldLossToWinActivate(
+      powerUpCard,
       fight,
       fighter.id
     );
@@ -63,14 +66,15 @@ export class ScoringEngine {
     const victoryPoints = this.calculateVictoryPoints(
       fight,
       fighter.id,
-      resilienceActive
+      lossToWinActive
     );
 
     // Step 2: Calculate Method Multiplier (M)
     const methodMultiplier = this.calculateMethodMultiplier(
       fight,
       fighter.id,
-      resilienceActive
+      lossToWinActive,
+      powerUpCard
     );
 
     // Step 3: Calculate Volume Points (Vol)
@@ -95,7 +99,7 @@ export class ScoringEngine {
 
     // Step 9: Apply Power-Up (PU)
     const powerUpResult = this.powerUpApplicator.applyPowerUp(
-      roster,
+      powerUpCard,
       fight,
       fighter.id,
       scoreWithCaptain
@@ -137,17 +141,18 @@ export class ScoringEngine {
 
   /**
    * Calculate method multiplier
-   * Only applies if fighter won (or if Resilience is active)
-   * If Resilience is active, treat as Unanimous Decision
+   * Only applies if fighter won (or if loss-to-win is active)
+   * If loss-to-win is active, use the card's configured multiplier
    */
   private calculateMethodMultiplier(
     fight: Fight,
     fighterId: string,
-    resilienceActive: boolean
+    lossToWinActive: boolean,
+    powerUpCard: PowerUpCard | null
   ): number {
-    // Resilience treats loss as Unanimous Decision win
-    if (resilienceActive) {
-      return POWER_UP_EFFECTS.RESILIENCE.DECISION_EQUIVALENT_MULTIPLIER;
+    // Loss-to-win power-up converts loss to win with configured multiplier
+    if (lossToWinActive && powerUpCard) {
+      return this.powerUpApplicator.getLossToWinMethodMultiplier(powerUpCard);
     }
 
     // Method multiplier only applies to winners

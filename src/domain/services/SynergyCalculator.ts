@@ -17,6 +17,7 @@ import { SYNERGY_MULTIPLIERS } from "@/shared/constants/scoring-constants";
 export interface SynergyResult {
   multiplier: number;
   flatBonus: number;
+  type: string | null;
 }
 
 export class SynergyCalculator {
@@ -33,6 +34,7 @@ export class SynergyCalculator {
       return {
         multiplier: SYNERGY_MULTIPLIERS.STRIKER,
         flatBonus: 0,
+        type: "Striker",
       };
     }
 
@@ -41,6 +43,7 @@ export class SynergyCalculator {
       return {
         multiplier: SYNERGY_MULTIPLIERS.GRAPPLER,
         flatBonus: 0,
+        type: "Grappler",
       };
     }
 
@@ -49,6 +52,7 @@ export class SynergyCalculator {
       return {
         multiplier: SYNERGY_MULTIPLIERS.NONE,
         flatBonus: SYNERGY_MULTIPLIERS.ALL_ROUNDER_BONUS,
+        type: "All-Rounder",
       };
     }
 
@@ -60,6 +64,7 @@ export class SynergyCalculator {
     return {
       multiplier: SYNERGY_MULTIPLIERS.NONE,
       flatBonus: 0,
+      type: null,
     };
   }
 }

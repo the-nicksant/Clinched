@@ -22,6 +22,12 @@ export interface Fighter {
 
   /** Age in years (used for Veteran synergy - 35+ is veteran) */
   age: number;
+
+  /** Fighter's salary cost (for salary cap validation) */
+  salary?: number;
+
+  /** Fighter's current ranking (0 = champion, null = unranked) */
+  rank?: number | null;
 }
 
 /**
