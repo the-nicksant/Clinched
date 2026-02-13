@@ -15,6 +15,7 @@ import type * as functions_leaderboard from "../functions/leaderboard.js";
 import type * as functions_powerUpCards from "../functions/powerUpCards.js";
 import type * as functions_rosters from "../functions/rosters.js";
 import type * as functions_scoring from "../functions/scoring.js";
+import type * as functions_scraper from "../functions/scraper.js";
 import type * as functions_users from "../functions/users.js";
 import type * as seed_powerUpCards from "../seed/powerUpCards.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   "functions/powerUpCards": typeof functions_powerUpCards;
   "functions/rosters": typeof functions_rosters;
   "functions/scoring": typeof functions_scoring;
+  "functions/scraper": typeof functions_scraper;
   "functions/users": typeof functions_users;
   "seed/powerUpCards": typeof seed_powerUpCards;
 }>;

@@ -1,0 +1,9 @@
+{
+  "description": "List of Sherdog event URLs to scrape. Add new event URLs here.",
+  "events": [
+    {
+      "url": "https://www.sherdog.com/events/UFC-Fight-Night-267-Strickland-vs-Hernandez-110784",
+      "hasResults": false
+    }
+  ]
+}

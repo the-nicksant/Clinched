@@ -30,9 +30,14 @@ export default defineSchema({
     age: v.number(),
     imageUrl: v.optional(v.string()),
     sherdogUrl: v.optional(v.string()),
+    sherdogId: v.optional(v.string()),
     tapologyUrl: v.optional(v.string()),
+    tapologyId: v.optional(v.string()),
     isActive: v.boolean(),
-  }).index("by_name", ["name"]),
+  })
+    .index("by_name", ["name"])
+    .index("by_sherdogId", ["sherdogId"])
+    .index("by_tapologyId", ["tapologyId"]),
 
   powerUpCards: defineTable({
     name: v.string(),
@@ -65,6 +70,8 @@ export default defineSchema({
     ),
     isMainCard: v.boolean(),
     rosterLockTime: v.number(),
+    sherdogUrl: v.optional(v.string()),
+    tapologyUrl: v.optional(v.string()),
   })
     .index("by_eventDate", ["eventDate"])
     .index("by_status", ["status"]),
