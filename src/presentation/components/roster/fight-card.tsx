@@ -1,12 +1,18 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
-import { Crown, X } from "lucide-react";
-import Image from "next/image";
+import { Crown } from "lucide-react";
+import { FighterMiniCard } from "./fighter-mini-card";
 
-// Fight Card Component (Side-by-side fighters)
-interface FightCardProps {
+export interface FighterMiniCardData {
+  _id: Id<"fighters">;
+  name: string;
+  nickname?: string;
+  record: { wins: number; losses: number; draws: number };
+  fighterClass: string;
+  imageUrl?: string;
+}
+
+export interface FightCardProps {
   fight: {
     _id: Id<"fights">;
     weightClass: string;
@@ -15,22 +21,8 @@ interface FightCardProps {
     fighter1Salary: number;
     fighter2Salary: number;
   };
-  fighter1: {
-    _id: Id<"fighters">;
-    name: string;
-    nickname?: string;
-    record: { wins: number; losses: number; draws: number };
-    fighterClass: string;
-    imageUrl?: string;
-  };
-  fighter2: {
-    _id: Id<"fighters">;
-    name: string;
-    nickname?: string;
-    record: { wins: number; losses: number; draws: number };
-    fighterClass: string;
-    imageUrl?: string;
-  };
+  fighter1: FighterMiniCardData;
+  fighter2: FighterMiniCardData;
   isSelected1: boolean;
   isSelected2: boolean;
   onSelect1: () => void;
@@ -56,12 +48,12 @@ export function FightCard({
           </span>
           <div className="flex gap-2">
             {fight.isMainEvent && (
-              <Badge className="bg-linear-to-r from-amber-600 to-orange-600 text-xs">
+              <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-xs">
                 Main Event
               </Badge>
             )}
             {fight.isTitleFight && (
-              <Badge className="bg-linear-to-r from-yellow-600 to-amber-600 text-xs">
+              <Badge className="bg-gradient-to-r from-yellow-600 to-amber-600 text-xs">
                 <Crown className="mr-1 h-3 w-3" />
                 Title
               </Badge>
@@ -71,8 +63,7 @@ export function FightCard({
       </div>
 
       {/* Fighters */}
-      <div className="grid grid-cols-2">
-        {/* Fighter 1 */}
+      <div className="relative grid grid-cols-2">
         <FighterMiniCard
           fighter={fighter1}
           corner="left"
@@ -82,7 +73,10 @@ export function FightCard({
           onSelect={onSelect1}
         />
 
-        {/* Fighter 2 */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+          <span className="text-lg font-bold text-cyan-400">VS</span>
+        </div>
+
         <FighterMiniCard
           fighter={fighter2}
           corner="right"
@@ -91,79 +85,6 @@ export function FightCard({
           isOpponentSelected={isSelected1}
           onSelect={onSelect2}
         />
-      </div>
-    </div>
-  );
-}
-
-// Fighter Mini Card (for fight selection)
-interface FighterMiniCardProps {
-  fighter: {
-    _id: Id<"fighters">;
-    name: string;
-    nickname?: string;
-    record: { wins: number; losses: number; draws: number };
-    fighterClass: string;
-    imageUrl?: string;
-  };
-  corner: 'left' | 'right';
-  salary: number;
-  isSelected: boolean;
-  isOpponentSelected: boolean;
-  onSelect: () => void;
-}
-
-function FighterMiniCard({
-  fighter,
-  corner,
-  salary,
-  isSelected,
-  isOpponentSelected,
-  onSelect,
-}: FighterMiniCardProps) {
-  return (
-    <div className={cn(
-      "flex cursor-pointer items-center gap-3 bg-zinc-900 transition-colors",
-      corner === 'left' ? 'flex-row' : 'flex-row-reverse',
-      isSelected && corner === 'left' ? "bg-linear-to-r" : 'bg-linear-to-l',
-      isSelected && "from-cyan-800 to-transparent",
-    )}>
-      <div className="h-50 w-50 overflow-hidden bg-cyan-900 relative z-10">
-        <Image
-          src={fighter.imageUrl || "/placeholder-fighter.png"}
-          alt={fighter.name}
-          width={200}
-          height={200}
-          className="object-cover w-full"
-        />
-
-        <Button
-          onClick={onSelect}
-          className="absolute bottom-2 right-1/2 translate-x-1/2 bg-cyan-600 hover:bg-cyan-500 text-white uppercase"
-          variant={isSelected ? "destructive" : "default"}
-          hidden={isOpponentSelected}
-        >
-          {!isSelected 
-            ? <>
-                PICK FOR {salary}
-              </>
-            : <>
-                <X className="h-4 w-4" />
-                Remove from roster
-              </>
-          }
-        </Button>
-      </div>
-      <div className={cn("w-full flex-1 flex", corner === 'left' ? 'pl-4 flex-row' : 'pr-4 flex-row-reverse text-right')}>
-        <header>
-          <h1 className="text-2xl font-bold uppercase">{fighter.name}</h1>
-          {fighter.nickname && (
-            <p className="text-xl text-cyan-400">&quot;{fighter.nickname}&quot;</p>
-          )}
-          <p className="text-sm text-cyan-400">
-            {fighter.record.wins}-{fighter.record.losses}-{fighter.record.draws}
-          </p>
-        </header>
       </div>
     </div>
   );
